@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <base href="/victoria-calendar-3/" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#9333ea" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="description" content="Кисунчик — личный трекер менструального цикла" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+  <title>Кисунчик 💜</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <!-- Auth Screen -->
+  <div id="authScreen" class="auth-screen" style="display:none">
+    <div class="auth-logo">💜</div>
+    <h1 class="auth-title">Кисунчик</h1>
+    <p class="auth-sub">Личный трекер цикла<br>только для двоих</p>
+
+    <form class="auth-form" onsubmit="handleAuth(event)">
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="authEmail" placeholder="vika1@vika.com или kostya@kostya.com" required autocomplete="email" />
+      </div>
+      <div class="form-group">
+        <label>Пароль</label>
+        <input type="password" id="authPassword" placeholder="••••••••" required minlength="6" autocomplete="current-password" />
+      </div>
+      <button type="submit" class="btn btn-primary">Войти / Создать аккаунт</button>
+    </form>
+    <p style="margin-top:20px;font-size:0.8rem;color:var(--text-secondary);line-height:1.5">
+      👩 <b>vika1@vika.com</b> — девушка<br>
+      🐱 <b>kostya@kostya.com</b> — кисунчик (админ)<br>
+      <span style="opacity:0.7">При первом входе аккаунт создаётся автоматически</span>
+    </p>
+  </div>
+
+  <!-- Main App -->
+  <div id="app" class="app" style="display:none">
+    <header class="header">
+      <h1>Кисунчик <span id="adminBadge" class="admin-badge" style="display:none">админ</span></h1>
+      <div class="header-actions">
+        <span id="userLabel" style="font-size:0.8rem;color:var(--text-secondary);margin-right:4px"></span>
+        <button class="icon-btn" id="themeBtn" onclick="toggleTheme()" title="Сменить тему">💜</button>
+        <button class="icon-btn" onclick="openSettingsModal()" title="Настройки цикла">⚙️</button>
+        <button class="icon-btn" onclick="logout()" title="Выйти">🚪</button>
+      </div>
+    </header>
+
+    <!-- HOME VIEW -->
+    <div id="view-home" class="view active">
+      <div id="phaseCard" class="phase-card glass"></div>
+
+      <div class="advice-section">
+        <div class="advice-tabs">
+          <button class="advice-tab active" data-tab="plans" onclick="showAdviceTab('plans')">📋 Планы</button>
+          <button class="advice-tab" data-tab="advice" onclick="showAdviceTab('advice')">💡 Совет</button>
+          <button class="advice-tab" data-tab="cheer" onclick="showAdviceTab('cheer')">💜 Поддержка</button>
+        </div>
+        <div id="adviceContent" class="advice-card glass"></div>
+      </div>
+
+      <div class="quick-log">
+        <div class="section-title">⚡ Быстрая запись</div>
+        <div class="log-grid">
+          <button class="log-btn glass-sm" onclick="openLogModal()">
+            <span class="emoji">📝</span>
+            Запись дня
+          </button>
+          <button class="log-btn glass-sm" onclick="openMigraineModal()">
+            <span class="emoji">🤕</span>
+            Мигрень
+          </button>
+          <button class="log-btn glass-sm" onclick="openSettingsModal()">
+            <span class="emoji">📅</span>
+            Цикл
+          </button>
+        </div>
+      </div>
+
+      <div class="calendar-wrap glass">
+        <div class="calendar-header">
+          <h3 id="calTitle">Календарь</h3>
+          <div class="cal-nav">
+            <button class="icon-btn" onclick="changeMonth(-1)">‹</button>
+            <button class="icon-btn" onclick="changeMonth(1)">›</button>
+          </div>
+        </div>
+        <div id="calGrid" class="cal-grid"></div>
+      </div>
+    </div>
+
+    <!-- LOGS VIEW -->
+    <div id="view-logs" class="view">
+      <div style="padding:12px 16px;display:flex;justify-content:space-between;align-items:center">
+        <div class="section-title" style="margin:0">📋 Все записи</div>
+        <button class="btn btn-primary" style="width:auto;padding:10px 16px;font-size:0.85rem" onclick="openLogModal()">+ Запись</button>
+      </div>
+      <div id="logsList" class="logs-list"></div>
+    </div>
+
+    <!-- MIGRAINE VIEW -->
+    <div id="view-migraine" class="view">
+      <div style="padding:12px 16px;display:flex;justify-content:space-between;align-items:center">
+        <div class="section-title" style="margin:0">🤕 Мигрени</div>
+        <button class="btn btn-primary" style="width:auto;padding:10px 16px;font-size:0.85rem" onclick="openMigraineModal()">+ Запись</button>
+      </div>
+      <div id="migraineList" class="logs-list"></div>
+    </div>
+
+    <!-- CALENDAR VIEW (full) -->
+    <div id="view-calendar" class="view">
+      <div class="calendar-wrap glass" style="margin-top:8px">
+        <div class="calendar-header">
+          <h3 id="calTitle2">Календарь</h3>
+          <div class="cal-nav">
+            <button class="icon-btn" onclick="changeMonth(-1)">‹</button>
+            <button class="icon-btn" onclick="changeMonth(1)">›</button>
+          </div>
+        </div>
+        <div id="calGrid2" class="cal-grid"></div>
+      </div>
+      <p style="text-align:center;font-size:0.8rem;color:var(--text-secondary);padding:12px">
+        Нажми на день, чтобы добавить запись
+      </p>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer-sig">
+      с любовью от <span>кисунчика</span> 🐱💜
+    </div>
+
+    <!-- Bottom Nav -->
+    <nav class="bottom-nav">
+      <button class="nav-item active" data-view="home" onclick="switchView('home')">
+        <span class="nav-emoji">🏠</span>
+        Главная
+      </button>
+      <button class="nav-item" data-view="logs" onclick="switchView('logs')">
+        <span class="nav-emoji">📋</span>
+        Записи
+      </button>
+      <button class="nav-item" data-view="migraine" onclick="switchView('migraine')">
+        <span class="nav-emoji">🤕</span>
+        Мигрень
+      </button>
+      <button class="nav-item" data-view="calendar" onclick="switchView('calendar')">
+        <span class="nav-emoji">📅</span>
+        Календарь
+      </button>
+    </nav>
+  </div>
+
+  <!-- Log Modal -->
+  <div id="logModal" class="modal-overlay" onclick="if(event.target===this)closeModal('logModal')">
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <div class="modal-title">📝 Запись дня</div>
+      <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:16px" id="logModalDate"></p>
+
+      <div class="form-group">
+        <label>Симптомы</label>
+        <div class="chip-group" id="symptomsChips">
+          <button type="button" class="chip" data-val="Головная боль" onclick="toggleChip(this)">🤕 Головная боль</button>
+          <button type="button" class="chip" data-val="Спазмы" onclick="toggleChip(this)">😣 Спазмы</button>
+          <button type="button" class="chip" data-val="Усталость" onclick="toggleChip(this)">😫 Усталость</button>
+          <button type="button" class="chip" data-val="Раздражительность" onclick="toggleChip(this)">😤 Раздражительность</button>
+          <button type="button" class="chip" data-val="Грусть" onclick="toggleChip(this)">😢 Грусть</button>
+          <button type="button" class="chip" data-val="Тревога" onclick="toggleChip(this)">😰 Тревога</button>
+          <button type="button" class="chip" data-val="Тошнота" onclick="toggleChip(this)">🤢 Тошнота</button>
+          <button type="button" class="chip" data-val="Сонливость" onclick="toggleChip(this)">💤 Сонливость</button>
+          <button type="button" class="chip" data-val="Энергия" onclick="toggleChip(this)">💪 Энергия</button>
+          <button type="button" class="chip" data-val="Хорошее настроение" onclick="toggleChip(this)">😊 Хорошее настроение</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Выделения</label>
+        <div class="chip-group" id="dischargesChips">
+          <button type="button" class="chip" data-val="Скудные" onclick="toggleChip(this)">💧 Скудные</button>
+          <button type="button" class="chip" data-val="Умеренные" onclick="toggleChip(this)">💦 Умеренные</button>
+          <button type="button" class="chip" data-val="Обильные" onclick="toggleChip(this)">🌊 Обильные</button>
+          <button type="button" class="chip" data-val="Белок яйца" onclick="toggleChip(this)">🥚 Белок яйца</button>
+          <button type="button" class="chip" data-val="Молочные" onclick="toggleChip(this)">🥛 Молочные</button>
+          <button type="button" class="chip" data-val="Коричневые" onclick="toggleChip(this)">🟤 Коричневые</button>
+          <button type="button" class="chip" data-val="Кровянистые" onclick="toggleChip(this)">🔴 Кровянистые</button>
+          <button type="button" class="chip" data-val="Прозрачные" onclick="toggleChip(this)">✨ Прозрачные</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Половой акт</label>
+        <div class="chip-group" id="sexChips">
+          <button type="button" class="chip" data-val="Был" onclick="toggleChip(this)">❤️ Был</button>
+          <button type="button" class="chip" data-val="Не было" onclick="toggleChip(this)">🤍 Не было</button>
+          <button type="button" class="chip" data-val="С защитой" onclick="toggleChip(this)">🛡️ С защитой</button>
+          <button type="button" class="chip" data-val="Без защиты" onclick="toggleChip(this)">💕 Без защиты</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Настроение</label>
+        <div class="chip-group" id="moodChips">
+          <button type="button" class="chip" data-val="Отлично" onclick="toggleChip(this)">😊 Отлично</button>
+          <button type="button" class="chip" data-val="Норм" onclick="toggleChip(this)">🙂 Норм</button>
+          <button type="button" class="chip" data-val="Так себе" onclick="toggleChip(this)">😐 Так себе</button>
+          <button type="button" class="chip" data-val="Плохо" onclick="toggleChip(this)">😔 Плохо</button>
+          <button type="button" class="chip" data-val="Ужасно" onclick="toggleChip(this)">😭 Ужасно</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Другое</label>
+        <div class="chip-group" id="otherChips">
+          <button type="button" class="chip" data-val="Таблетки" onclick="toggleChip(this)">💊 Таблетки</button>
+          <button type="button" class="chip" data-val="Спорт" onclick="toggleChip(this)">🏃 Спорт</button>
+          <button type="button" class="chip" data-val="Алкоголь" onclick="toggleChip(this)">🍷 Алкоголь</button>
+          <button type="button" class="chip" data-val="Плохой сон" onclick="toggleChip(this)">😴 Плохой сон</button>
+          <button type="button" class="chip" data-val="Хорошее питание" onclick="toggleChip(this)">🍎 Хорошее питание</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Заметка</label>
+        <textarea id="logNote" rows="2" placeholder="Что-то важное..."></textarea>
+      </div>
+
+      <button class="btn btn-primary" onclick="saveLog()">Сохранить 💜</button>
+      <button class="btn btn-ghost" style="width:100%;margin-top:8px" onclick="closeModal('logModal')">Отмена</button>
+    </div>
+  </div>
+
+  <!-- Migraine Modal -->
+  <div id="migraineModal" class="modal-overlay" onclick="if(event.target===this)closeModal('migraineModal')">
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <div class="modal-title">🤕 Мигрень / Головная боль</div>
+      <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:16px" id="migModalDate"></p>
+
+      <div class="form-group">
+        <label>Болела голова?</label>
+        <div class="migraine-status">
+          <button type="button" class="status-btn" onclick="setMigStatus(this,'yes')">🤕 Да, болела</button>
+          <button type="button" class="status-btn" onclick="setMigStatus(this,'no')">✅ Нет</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Что использовали</label>
+        <div class="chip-group" id="medsChips">
+          <button type="button" class="chip" data-val="nurofen" onclick="toggleMed(this)">Нурофен</button>
+          <button type="button" class="chip" data-val="eskenza1" onclick="toggleMed(this)">Эскенза 1 пшик</button>
+          <button type="button" class="chip" data-val="eskenza2" onclick="toggleMed(this)">Эскенза 2 пшика</button>
+          <button type="button" class="chip" data-val="other" onclick="toggleMed(this)">Другое</button>
+        </div>
+      </div>
+
+      <div class="form-group" id="otherMedGroup" style="display:none">
+        <label>Что именно</label>
+        <input type="text" id="migOtherMed" placeholder="Название средства" />
+      </div>
+
+      <div class="form-group">
+        <label>Заметка</label>
+        <textarea id="migNote" rows="2" placeholder="Интенсивность, когда началось..."></textarea>
+      </div>
+
+      <button class="btn btn-primary" onclick="saveMigraine()">Сохранить</button>
+      <button class="btn btn-ghost" style="width:100%;margin-top:8px" onclick="closeModal('migraineModal')">Отмена</button>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settingsModal" class="modal-overlay" onclick="if(event.target===this)closeModal('settingsModal')">
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <div class="modal-title">⚙️ Настройки цикла</div>
+
+      <form onsubmit="saveSettings(event)">
+        <div class="form-group">
+          <label>Дата начала последних месячных</label>
+          <input type="date" id="setLastPeriod" required />
+        </div>
+        <div class="form-group">
+          <label>Длина цикла (дней)</label>
+          <input type="number" id="setCycleLen" min="21" max="45" value="28" />
+        </div>
+        <div class="form-group">
+          <label>Длина месячных (дней)</label>
+          <input type="number" id="setPeriodLen" min="2" max="10" value="5" />
+        </div>
+        <button type="submit" class="btn btn-primary">Сохранить</button>
+        <button type="button" class="btn btn-ghost" style="width:100%;margin-top:8px" onclick="closeModal('settingsModal')">Отмена</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast"></div>
+
+  <script src="js/firebase-config.js"></script>
+  <script src="js/cycle-logic.js"></script>
+  <script src="js/advice.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
